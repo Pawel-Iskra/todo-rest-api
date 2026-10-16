@@ -4,8 +4,6 @@ import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Optional;
-
 @Service
 @AllArgsConstructor
 public class TaskService {
@@ -18,19 +16,17 @@ public class TaskService {
 
     @Transactional
     public TaskUpdateRequestDto updateTask(Long taskId, TaskUpdateRequestDto taskUpdateRequest) {
-        Optional<Task> taskOptional = taskRepository.findById(taskId);
-        if (taskOptional.isEmpty()) {
-            throw new TaskNotFoundException(TASK_NOT_FOUND_FOR_GIVEN_ID);
-        }
+        Task taskToUpdate = taskRepository.findById(taskId)
+                .orElseThrow(() -> new TaskNotFoundException(TASK_NOT_FOUND_FOR_GIVEN_ID));
 
         if (taskUpdateRequest == null || taskUpdateRequest.description() == null) {
             throw new IllegalArgumentException(TASK_DESC_REQUIRED);
         }
 
-        Task taskToUpdate = taskOptional.get();
         taskToUpdate.setDescription(taskUpdateRequest.description());
         taskToUpdate.setPriority(taskUpdateRequest.priority());
         taskRepository.save(taskToUpdate);
+        // not necessary - hibernate detects changes to managed entity and persists them at transaction commit
         return taskUpdateRequest;
     }
 }
